@@ -1,0 +1,43 @@
+# Composer
+/vendor/
+composer.lock
+
+# PHPSpec
+/spec/
+
+# PHPUnit
+/tests/
+phpunit.xml
+/build/
+
+# Behat
+/features/bootstrap/
+
+# SensioLabs Security Checker
+security-checker.phar
+
+# Logs and dumps
+/logs/
+*.log
+*.sql
+*.sqlite
+
+# Local configuration
+# IMPORTANT: Add your database connection file here!
+# Example:
+# config.php
+# db_connection.php
+# .env
+
+# Built assets
+/public/build/
+
+# IDE files
+.idea/
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
+# Archivo de conexión a la base de datos
+model/conexion.php
