@@ -1,0 +1,61 @@
+<?php
+// ARCHIVO: prueba_venta.php (SOLO PARA DEPURACIÓN)
+
+echo "<h1>Iniciando Prueba de Fuego...</h1>";
+
+// 1. Forzamos que se muestren TODOS los errores
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Iniciamos la sesión
+session_start();
+
+echo "<p>Paso 1: Sesión iniciada y errores activados.</p>";
+
+// 3. SIMULAMOS UN CARRITO DE COMPRAS
+// Creamos un carrito falso para que la función tenga algo con qué trabajar.
+$_SESSION['carrito'] = [
+    [
+        'id_producto' => 1, // ID de un producto que exista en tu BD
+        'unidades' => 2,
+        'precio' => 35.50,
+        'producto' => null // No necesitamos el objeto completo para esta prueba
+    ],
+    [
+        'id_producto' => 3, // ID de otro producto que exista
+        'unidades' => 1,
+        'precio' => 12.00,
+        'producto' => null
+    ]
+];
+
+echo "<p>Paso 2: Carrito de prueba creado en la sesión.</p>";
+echo "<hr>";
+
+// 4. Intentamos cargar el controlador y llamar a la función
+try {
+    echo "<p>Intentando cargar 'controller/ventas.controller.php'...</p>";
+    require_once 'controller/ventas.controller.php';
+    echo "<p><strong>ÉXITO:</strong> Archivo del controlador cargado.</p>";
+    
+    echo "<p>Intentando crear una instancia de 'VentasController'...</p>";
+    $controller = new VentasController();
+    echo "<p><strong>ÉXITO:</strong> Objeto VentasController creado.</p>";
+    
+    echo "<p>Intentando llamar al método 'RegistrarDesdeTienda()'...</p>";
+    // Llamamos directamente a la función que está fallando
+    $controller->RegistrarDesdeTienda();
+
+} catch (Throwable $e) {
+    // Si ocurre CUALQUIER error fatal, lo capturamos y lo mostramos aquí
+    echo "<h1>¡ERROR FATAL CAPTURADO!</h1>";
+    echo "<p>El script se detuvo inesperadamente. El error es:</p>";
+    echo "<pre>";
+    print_r($e);
+    echo "</pre>";
+}
+
+echo "<hr>";
+echo "<h1>Fin de la Prueba de Fuego.</h1>";
+?>

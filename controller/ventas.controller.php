@@ -1,5 +1,5 @@
 <?php
-// ARCHIVO: controller/ventas.controller.php
+// ARCHIVO: controller/ventas.controller.php (VERSIÓN FINAL COMPLETA)
 
 require_once 'model/ventas.php';
 require_once 'model/cliente.php';
@@ -10,21 +10,13 @@ require_once 'model/usuarios.php';
 class VentasController
 {
     private $model;
-    private $modelCliente;
-    private $modelProducto;
-    private $modelServicio;
-    private $modelUsuario;
-
+    
     public function __construct() {
         $this->model = new Ventas();
-        $this->modelCliente = new Cliente();
-        $this->modelProducto = new Producto();
-        $this->modelServicio = new Servicios();
-        $this->modelUsuario = new Usuario();
     }
 
     // =====================================================================
-    //          MÉTODOS ORIGINALES DEL PANEL DE ADMINISTRACIÓN (INTACTOS)
+    //          MÉTODOS ORIGINALES DEL PANEL DE ADMINISTRACIÓN
     // =====================================================================
 
     public function Index() {
@@ -38,96 +30,134 @@ class VentasController
     }
 
     public function Nueva() {
-        // Tu código original va aquí...
+        $modelCliente = new Cliente();
+        $modelProducto = new Producto();
+        $modelServicio = new Servicios();
+        $modelUsuario = new Usuario();
+
+        $clientes = $modelCliente->Listar();
+        $productos = $modelProducto->Listar();
+        $servicios = $modelServicio->Listar();
+        $usuarios = $modelUsuario->Listar();
+        
+        require_once 'view/header.php';
+        require_once 'view/frmnuevaventa.php';
+        require_once 'view/footer.php';
     }
 
     public function Guardar() {
-        // Tu código original va aquí...
+        $venta = new Ventas();
+        $venta->id_cliente = $_POST['id_cliente'];
+        $venta->id_usuario_vendedor = $_POST['id_usuario_vendedor'];
+        $venta->notas_obs = $_POST['notas_obs'];
+        $venta->etapa = $_POST['etapa'];
+
+        $productos = [];
+        if (isset($_POST['productos_id'])) {
+            for ($i = 0; $i < count($_POST['productos_id']); $i++) {
+                $productos[] = [
+                    'id' => $_POST['productos_id'][$i],
+                    'cantidad' => $_POST['productos_cantidad'][$i],
+                    'precio' => $_POST['productos_precio'][$i],
+                    'descuento' => $_POST['productos_descuento'][$i]
+                ];
+            }
+        }
+        
+        $servicios = [];
+        if (isset($_POST['servicios_id'])) {
+            for ($i = 0; $i < count($_POST['servicios_id']); $i++) {
+                $servicios[] = [
+                    'id' => $_POST['servicios_id'][$i],
+                    'cantidad' => $_POST['servicios_cantidad'][$i],
+                    'precio' => $_POST['servicios_precio'][$i]
+                ];
+            }
+        }
+        
+        $tiene_productos = !empty($productos);
+        $tiene_servicios = !empty($servicios);
+
+        if ($tiene_productos && $tiene_servicios) {
+            $venta->tipo_venta = 3; // Mixta
+        } elseif ($tiene_productos) {
+            $venta->tipo_venta = 1; // Solo Productos
+        } elseif ($tiene_servicios) {
+            $venta->tipo_venta = 2; // Solo Servicios
+        } else {
+            $venta->tipo_venta = null; // Venta vacía
+        }
+
+        $this->model->Crear($venta, $productos, $servicios);
+        $_SESSION['mensaje'] = ['tipo' => 'success', 'texto' => 'La nueva venta ha sido registrada con éxito.'];
+        header('Location: index.php?c=ventas&a=IndexPage');
+        exit;
     }
 
     public function ActualizarProceso() {
-        // Tu código original va aquí...
+        $uuid = $_POST['uuid'] ?? '';
+        $etapa = $_POST['etapa'] ?? 'Confirmada';
+        $estado_pago = $_POST['estado_pago'] ?? 'Pendiente';
+        $notas = $_POST['notas_obs'] ?? '';
+        
+        if (!empty($uuid)) {
+            $this->model->ActualizarProceso($uuid, $etapa, $estado_pago, $notas);
+            $_SESSION['mensaje'] = ['tipo' => 'success', 'texto' => 'El proceso de la venta ha sido actualizado.'];
+        }
+        header('Location: index.php?c=ventas&a=IndexPage');
+        exit;
     }
 
     public function Anular() {
-        // Tu código original va aquí...
+        $uuid = $_REQUEST['uuid'] ?? '';
+        if (!empty($uuid)) {
+            $this->model->Anular($uuid);
+            $_SESSION['mensaje'] = ['tipo' => 'info', 'texto' => 'La venta ha sido anulada correctamente.'];
+        }
+        header('Location: index.php?c=ventas&a=IndexPage');
+        exit;
     }
 
     // =====================================================================
     //              MÉTODOS PARA LA TIENDA ONLINE
     // =====================================================================
 
-    /**
-     * Muestra la página de checkout/confirmación de la tienda.
-     */
     public function Checkout() {
         require_once 'view/tienda/checkout.php';
     }
 
-    /**
-     * Registra una venta que viene desde la tienda online (VERSIÓN DE DEPURACIÓN).
-     */
     public function RegistrarDesdeTienda() {
-        
-        echo "<h1>Iniciando proceso de registro...</h1>";
-
         if(isset($_SESSION['carrito']) && !empty($_SESSION['carrito'])){
             
-            echo "<p><strong>Checkpoint 1:</strong> Carrito encontrado. Preparando datos...</p>";
+            $ventaData = new Ventas();
+            $ventaData->id_cliente = 1; 
+            $ventaData->id_usuario_vendedor = 1;
+            $ventaData->notas_obs = "Venta generada desde la tienda online.";
+            $ventaData->etapa = 'Confirmada';
+            $ventaData->tipo_venta = 1;
 
-            // 1. PREPARAMOS LOS DATOS DE LA VENTA PRINCIPAL
-            $venta = new Ventas();
-            $venta->id_cliente = 1;
-            $venta->id_usuario_vendedor = 1;
-            $venta->notas_obs = "Venta generada desde la tienda online.";
-            $venta->etapa = 'Confirmada';
-            $venta->tipo_venta = 1;
-
-            // 2. PREPARAMOS LOS PRODUCTOS DEL CARRITO
-            $productos_para_guardar = [];
-            foreach ($_SESSION['carrito'] as $item) {
-                // Verificamos que los datos necesarios existan en el carrito
-                if(isset($item['id_producto']) && isset($item['unidades']) && isset($item['precio'])){
-                    $productos_para_guardar[] = [
-                        'id' => $item['id_producto'],
-                        'cantidad' => $item['unidades'],
-                        'precio' => $item['precio'],
-                        'descuento' => 0
-                    ];
+            $id_nueva_venta = $this->model->RegistrarVentaDesdeTienda($ventaData);
+            
+            if($id_nueva_venta){
+                foreach($_SESSION['carrito'] as $item){
+                    $this->model->RegistrarDetalleDesdeTienda(
+                        $id_nueva_venta,
+                        $item['id_producto'],
+                        $item['unidades'],
+                        $item['precio']
+                    );
                 }
-            }
-            
-            $servicios_para_guardar = [];
-
-            // --- CHECKPOINT 2: MOSTRAMOS LOS DATOS QUE VAMOS A GUARDAR ---
-            echo "<p><strong>Checkpoint 2:</strong> Datos listos para enviar al modelo. Por favor, revisa que sean correctos:</p>";
-            echo "<pre>";
-            
-            echo "<strong>Objeto Venta:</strong><br>";
-            print_r($venta);
-
-            echo "<br><strong>Array de Productos:</strong><br>";
-            print_r($productos_para_guardar);
-
-            echo "</pre>";
-
-            // --- DETENEMOS LA EJECUCIÓN A PROPÓSITO ---
-            die("--- Fin de la depuración. El guardado en la base de datos se ha detenido. Revisa los datos de arriba. ---");
-
-            // 3. LLAMAMOS A TU MÉTODO 'Crear' (No se ejecutará por ahora)
-            $exito = $this->model->Crear($venta, $productos_para_guardar, $servicios_para_guardar);
-
-            if($exito){
+                
                 unset($_SESSION['carrito']);
                 require_once 'view/tienda/compra_exitosa.php';
+                
             } else {
-                echo "Error: No se pudo registrar la venta.";
+                echo "Error: No se pudo registrar la venta. El modelo no devolvió un ID.";
             }
 
         } else {
-            echo "<p><strong>ERROR:</strong> No se encontró nada en el carrito de compras.</p>";
-            die();
+            header('Location: index.php');
+            exit();
         }
     }
 }
-?>
