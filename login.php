@@ -1,23 +1,52 @@
+
 <?php
 session_start();
 $msg = '';
+
 try {
-    $conex = new PDO("mysql:host=localhost;dbname=ventasmvc","root","root");
+     $conex = new PDO("mysql:host=localhost;dbname=tech_f4","root","");
     $conex->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
  
     if (isset($_POST["login"])) {
         if (empty($_POST["email"]) || empty($_POST["password"])) {
             $msg = '<label>Todos los campos son requeridos</label>';
         } else {
-            $sql = "SELECT * FROM usuario WHERE email = :email";
+            // Buscamos el usuario por su correo
+            $sql = "SELECT * FROM usuarios WHERE correo_login = :email";
             $stmt = $conex->prepare($sql);
             $stmt->execute(array(':email' => $_POST["email"]));
-            $sqlresult = $stmt->fetch(PDO::FETCH_ASSOC);            
-            if ($sqlresult) {
-                $_SESSION["email"] = $_POST["email"];
-                header("location:index.php");
+            $usuario_encontrado = $stmt->fetch(PDO::FETCH_ASSOC);            
+            
+            if ($usuario_encontrado) {
+                
+                // Variable para saber si el login fue exitoso
+                $login_exitoso = false;
+                
+                // =========================================================================
+                // CORRECCIÓN CLAVE: Verificamos de ambas maneras (segura y simple)
+                // =========================================================================
+
+                // 1. PRIMERO, intentamos la forma segura (para futuras contraseñas encriptadas)
+                // Usamos el nombre de columna correcto: 'contraseña_login'
+                if (password_verify($_POST["password"], $usuario_encontrado["contraseña_login"])) {
+                    $login_exitoso = true;
+                } 
+                // 2. SI FALLA, probamos la forma simple (para tus contraseñas 'admin123' actuales)
+                elseif ($_POST["password"] == $usuario_encontrado["contraseña_login"]) {
+                    $login_exitoso = true;
+                }
+
+                // Si alguna de las dos verificaciones fue exitosa...
+                if ($login_exitoso) {
+                    $_SESSION["email"] = $_POST["email"];
+                    header("location:index.php?c=cliente");
+                    exit();
+                } else {
+                    $msg = '<label>Contraseña incorrecta.</label>';
+                }
+                
             } else {
-                $msg = '<label>Datos incorrectos del usuario</label>';
+                $msg = '<label>El correo ingresado no existe.</label>';
             }
         }
     }
@@ -25,7 +54,6 @@ try {
     $msg = $error->getMessage();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -102,6 +130,16 @@ try {
                                         </div>
                                     </div>
                                     <div class="row">
+                                        <div class="col-lg-12">
+                                            <!-- MOSTRAREMOS EL MENSAJE DE ERROR AQUÍ -->
+                                            <?php if(!empty($msg)): ?>
+                                                <div class="alert alert-danger" role="alert">
+                                                    <?php echo $msg; ?>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                    <div class="row">
                                         <div class="col-lg-4">
                                             <div class="login-input-head">
                                                 <p>Correo</p>
@@ -109,7 +147,7 @@ try {
                                         </div>
                                         <div class="col-lg-8">
                                             <div class="login-input-area">
-                                                <input type="email" name="email" />
+                                                <input type="email" name="email" required />
                                                 <i class="fa fa-envelope login-user" aria-hidden="true"></i>
                                             </div>
                                         </div>
@@ -122,7 +160,7 @@ try {
                                         </div>
                                         <div class="col-lg-8">
                                             <div class="login-input-area">
-                                                <input type="password" name="password" />
+                                                <input type="password" name="password" required />
                                                 <i class="fa fa-lock login-user"></i>
                                             </div>                                           
                                         </div>

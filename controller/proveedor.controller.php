@@ -13,7 +13,12 @@ class ProveedorController
         $this->model = new Proveedor();
         $this->modelCategoria = new CategoriaProducto();
     }
-
+        public function Index()
+{
+    // Llama a la función que ya tenías y que muestra la página principal.
+    // Reemplaza 'IndexPage' por el nombre real de tu función si es diferente.
+    $this->IndexPage(); 
+}
     // Este es el método que tu index.php llama por defecto para este controlador
     public function IndexPage()
     {

@@ -12,8 +12,15 @@ class ProductoController
         $this->model = new Producto();
         $this->modelCategoria = new CategoriaProducto();
     }
-
+    
     // --- CORRECCIÓN CRÍTICA: El método ahora se llama "IndexPage" para coincidir con el enrutador. ---
+    
+    public function Index()
+{
+    // Llama a la función que ya tenías y que muestra la página principal.
+    // Reemplaza 'IndexPage' por el nombre real de tu función si es diferente.
+    $this->IndexPage(); 
+}
     public function IndexPage()
     {
         // Pasamos la lista de categorías a la vista para usarla en los formularios
@@ -23,6 +30,8 @@ class ProductoController
         require_once 'view/frmproducto.php';
         require_once 'view/footer.php';
     }
+
+    
 
     public function InsEditar()
     {

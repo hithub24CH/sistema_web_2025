@@ -10,6 +10,12 @@ class MetodosPagoController
         $this->model = new MetodoPago();
     }
 
+        public function Index()
+{
+    // Llama a la función que ya tenías y que muestra la página principal.
+    // Reemplaza 'IndexPage' por el nombre real de tu función si es diferente.
+    $this->IndexPage(); 
+}
     public function IndexPage()
     {
         require_once 'view/header.php';
